@@ -1,0 +1,256 @@
+{
+  "name": "Chat with NOLAI Server",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "mode": "webhook",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1120,
+        -480
+      ],
+      "id": "4beabdba-9187-4660-84a5-2b5980c84e8b",
+      "name": "When chat message received",
+      "webhookId": "349edd5b-c6c0-4a16-8fc4-36261a1958b9"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chat.nolai.nl/ollama/api/chat",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"mistral:latest\",\n  \"messages\": [\n    { \"role\": \"user\", \"content\": \"{{ $json.envelope.syncMessage.sentMessage.message }}\" }\n  ],\n  \"stream\": false\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -380,
+        -320
+      ],
+      "id": "e4dacc30-800d-42fe-805a-965fd1fe39dc",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "qEZ2l0IutVIJaogm",
+          "name": "Bearer Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => ({\n  json: {\n    text: item.json.message.content,\n  },\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        -180
+      ],
+      "id": "50534fa8-867d-4e01-9f40-5363bfa1b15e",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.0.83:9999/v2/send",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message\": {{ JSON.stringify($json.text) }},\n  \"number\": \"+3161234567890\",\n  \"recipients\": [\n    \"+3161234567890\"\n  ]\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        20,
+        -180
+      ],
+      "id": "83c67971-7df2-4c41-b596-97ab67dbd477",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1140,
+        -180
+      ],
+      "id": "82d37dcc-5830-45ae-a0dc-4acece404c14",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "176d8365-2a59-40c9-a0ce-90d263dbac37",
+              "leftValue": "={{ $json.data }}",
+              "rightValue": "[]",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -580,
+        -180
+      ],
+      "id": "d1515132-3621-4b74-85fd-31f387a264eb",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "url": "http://192.168.0.83:9999/v1/receive/+3161234567890",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -940,
+        -180
+      ],
+      "id": "8eebac97-34c7-4dce-ad4c-5f05ee81fb6d",
+      "name": "Get Signal Messages"
+    },
+    {
+      "parameters": {
+        "jsCode": "// items is the array of incoming items (usually length 1 for this Signal node)\nconst newItems = [];\n\nfor (const item of items) {\n  // 1) Safely parse the JSON string (or get an empty array)\n  let arr = [];\n  try {\n    arr = JSON.parse(item.json.data || '[]');\n  } catch (e) {\n    // If parsing fails, skip to next item\n    continue;\n  }\n\n  // 2) Filter: must have sentMessage AND message must start with \"@AI\"\n  const filtered = arr.filter(msg =>\n    // a) has envelope.syncMessage.sentMessage\n    msg.envelope?.syncMessage?.sentMessage\n    // b) AND the text starts with \"@AI\"\n    && msg.envelope.syncMessage.sentMessage.message?.startsWith('@AI')\n  );\n\n  // 3) Wrap each passing message into n8n's item format\n  for (const msg of filtered) {\n    newItems.push({ json: msg });\n  }\n}\n\n// 4) Return only the filtered items\nreturn newItems;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -760,
+        -180
+      ],
+      "id": "f67de91e-010b-422f-a6d7-11b5545e879a",
+      "name": "Code1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        []
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Signal Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Get Signal Messages": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "dc766e97-c5a9-4aea-a373-53adcd706388",
+  "meta": {
+    "instanceId": "6a24fc61130f1037a668248b92fa25e533d6a939b98797fcb603a0d44f6dd802"
+  },
+  "id": "qubfJPuGaMWXYMpx",
+  "tags": []
+}
