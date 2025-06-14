@@ -11,7 +11,7 @@
       "typeVersion": 1.1,
       "position": [
         -1120,
-        -480
+        -420
       ],
       "id": "4beabdba-9187-4660-84a5-2b5980c84e8b",
       "name": "When chat message received",
@@ -71,14 +71,14 @@
         "url": "http://192.168.0.83:9999/v2/send",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"message\": {{ JSON.stringify($json.text) }},\n  \"number\": \"+3161234567890\",\n  \"recipients\": [\n    \"+3161234567890\"\n  ]\n} ",
+        "jsonBody": "={\n  \"message\": {{ JSON.stringify($json.text) }},\n  \"number\": \"{{ $json.constants['phone-number'] }}\",\n  \"recipients\": [\n    \"{{ $json.constants['phone-number'] }}\"\n  ]\n} ",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        20,
-        -180
+        120,
+        -80
       ],
       "id": "83c67971-7df2-4c41-b596-97ab67dbd477",
       "name": "HTTP Request1"
@@ -96,8 +96,8 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -1140,
-        -180
+        -1440,
+        40
       ],
       "id": "82d37dcc-5830-45ae-a0dc-4acece404c14",
       "name": "Schedule Trigger"
@@ -137,7 +137,7 @@
     },
     {
       "parameters": {
-        "url": "http://192.168.0.83:9999/v1/receive/+3161234567890",
+        "url": "=http://192.168.0.83:9999/v1/receive/{{ $json.constants['phone-number'] }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -161,6 +161,40 @@
       ],
       "id": "f67de91e-010b-422f-a6d7-11b5545e879a",
       "name": "Code1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-globals.globalConstants",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        40
+      ],
+      "id": "f22fe409-5ec5-47b1-b6cb-01d4f76b5407",
+      "name": "Global Constants",
+      "credentials": {
+        "globalConstantsApi": {
+          "id": "95Dr77jikKx1adef",
+          "name": "Global Constants account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-globals.globalConstants",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -180
+      ],
+      "id": "005ace2b-7b18-40cf-811d-3724344fb02d",
+      "name": "Global Constants1",
+      "credentials": {
+        "globalConstantsApi": {
+          "id": "95Dr77jikKx1adef",
+          "name": "Global Constants account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -185,7 +219,7 @@
       "main": [
         [
           {
-            "node": "HTTP Request1",
+            "node": "Global Constants1",
             "type": "main",
             "index": 0
           }
@@ -201,7 +235,7 @@
       "main": [
         [
           {
-            "node": "Get Signal Messages",
+            "node": "Global Constants",
             "type": "main",
             "index": 0
           }
@@ -241,14 +275,37 @@
           }
         ]
       ]
+    },
+    "Global Constants": {
+      "main": [
+        [
+          {
+            "node": "Get Signal Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Global Constants1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "dc766e97-c5a9-4aea-a373-53adcd706388",
+  "versionId": "e3286720-5f7f-4513-b01e-81e9ed34adc2",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "6a24fc61130f1037a668248b92fa25e533d6a939b98797fcb603a0d44f6dd802"
   },
   "id": "qubfJPuGaMWXYMpx",
