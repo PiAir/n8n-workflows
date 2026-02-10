@@ -1,0 +1,562 @@
+{
+  "name": "Gmail Scholar Alerts to Sheets",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 5
+            }
+          ]
+        }
+      },
+      "id": "a5d80e53-f1f9-4330-921f-46527109ea29",
+      "name": "Schedule Trigger",
+      "position": [
+        -2272,
+        144
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "jsCode": "// Use hardcoded spreadsheet ID\nreturn [{\n  json: {\n    id: '1XvtzTLE-TAizIv9L6kmNKWACoqZiChLPNV4_I6Djj6A',\n    name: 'Aanbevolen Artikelen',\n    mimeType: 'application/vnd.google-apps.spreadsheet'\n  }\n}];"
+      },
+      "id": "25fff717-61fc-4e1d-a13d-184879f8484d",
+      "name": "Find Sheet",
+      "position": [
+        -2048,
+        96
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "id": "5772f31d-b51c-43d6-aead-2f47ae14296e",
+      "name": "Gate",
+      "position": [
+        -1824,
+        144
+      ],
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get data from Find Sheet node\nconst found = $('Find Sheet').all();\nconst first = found[0]?.json;\n\nif (first?.id) {\n  return [{ \n    json: { \n      spreadsheetId: first.id, \n      sheetName: \"Aanbevolen Artikelen\", \n      needsCreate: false \n    } \n  }];\n}\n\nreturn [{ \n  json: { \n    sheetName: \"Aanbevolen Artikelen\", \n    needsCreate: true \n  } \n}];\n"
+      },
+      "id": "a1fb45d7-8f91-48b4-9df0-ceca50833753",
+      "name": "Resolve Sheet",
+      "position": [
+        -1600,
+        144
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "5adca6e6-548b-4dde-b78f-26305532fea9",
+              "leftValue": "={{$json.needsCreate}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d3ceb06f-6b57-4c6f-af94-4adcc37a3060",
+      "name": "Needs Create?",
+      "position": [
+        -1376,
+        144
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "Aanbevolen Artikelen",
+        "sheetsUi": {
+          "sheetValues": [
+            {
+              "title": "Aanbevolen Artikelen"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "72f20d21-304c-4aee-b21a-18606fb86ab3",
+      "name": "Create Spreadsheet",
+      "position": [
+        -1152,
+        80
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EdpruPEUkTUFkXyW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "mode": "id",
+          "value": "={{$json.spreadsheetId || $json.id}}"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "mode": "id",
+          "value": "1wEdWMvbcaHH89i0o_e_H58Arsi_4jsN4"
+        }
+      },
+      "id": "24378689-a2d6-4617-97ad-6b7ce3df8a8c",
+      "name": "Move Spreadsheet",
+      "position": [
+        -928,
+        80
+      ],
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "JwqAH5KCeSeZ8fzs",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the spreadsheet ID from the moved file\nconst data = $input.first().json;\nconst spreadsheetId = data.spreadsheetId || data.id;\n\nreturn [{\n  json: {\n    spreadsheetId: spreadsheetId,\n    sheetName: \"Aanbevolen Artikelen\"\n  }\n}];\n"
+      },
+      "id": "8661caf1-a6ee-481c-946e-c0705a2efda5",
+      "name": "Set Sheet (Created)",
+      "position": [
+        -704,
+        80
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    spreadsheetId: $input.first().json.spreadsheetId,\n    sheetName: $input.first().json.sheetName\n  }\n}];\n"
+      },
+      "id": "846f8f23-98d5-4dee-8fe8-5c49cf17246f",
+      "name": "Set Sheet (Found)",
+      "position": [
+        -704,
+        272
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {},
+      "id": "9d529a10-0138-4987-9b14-84d885a01a08",
+      "name": "Sheet Id Merge",
+      "position": [
+        -480,
+        144
+      ],
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const spreadsheetId = $input.first().json.spreadsheetId;\nconst sheetName = $input.first().json.sheetName;\n\n// Try to read the sheet\ntry {\n  const response = await this.helpers.httpRequestWithAuthentication.call(\n    this,\n    'googleSheetsOAuth2Api',\n    {\n      method: 'GET',\n      url: `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName)}!A:Z`,\n      json: true\n    }\n  );\n  \n  const rows = response.values || [];\n  const urls = rows.slice(1) // Skip header row\n    .map(row => row[0]) // Assume URL is first column\n    .filter(Boolean)\n    .filter(u => typeof u === 'string')\n    .map(u => u.trim())\n    .filter(u => u && u.toLowerCase() !== 'url');\n  \n  return [{ json: { existingUrls: urls } }];\n} catch (error) {\n  // Sheet is empty or doesn't exist yet\n  console.log('No existing data:', error.message);\n  return [{ json: { existingUrls: [] } }];\n}\n"
+      },
+      "id": "89be454f-32eb-425d-a6ef-540af107e540",
+      "name": "Get Existing URLs",
+      "position": [
+        -256,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "7caf02a7-9eb2-4ac6-ab8f-bd1abb6dd09a",
+      "name": "Sheet+URLs",
+      "position": [
+        -32,
+        80
+      ],
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": true,
+        "simple": false,
+        "filters": {
+          "q": "subject:Aanbevolen",
+          "receivedAfter": "={{$now.minus({ days: 7 }).toISO()}}"
+        },
+        "options": {}
+      },
+      "id": "60a74916-8401-4bba-a6dd-ff6f3aab6732",
+      "name": "Gmail Get Many",
+      "position": [
+        -256,
+        320
+      ],
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "webhookId": "b523a5e3-5bb5-48fb-97dd-f65f032fc67f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "jlSsYiAdxoDxj4Eu",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const articles = [];\nconst inputItems = $input.all();\n\nconsole.log('===== EXTRACTION START =====');\nconsole.log('Input items:', inputItems.length);\n\nfor (let idx = 0; idx < inputItems.length; idx++) {\n  const item = inputItems[idx];\n  console.log(`\\n=== Email ${idx + 1} ===`);\n  \n  const html = item.json.html || '';\n  const emailDate = item.json.date ? new Date(item.json.date) : new Date();\n  \n  console.log('HTML length:', html.length);\n  \n  if (!html) {\n    console.log('⚠️ No HTML');\n    continue;\n  }\n\n  // Split by the unique class to find articles\n  const segments = html.split('class=\"gse_alrt_title\"');\n  console.log('Found segments:', segments.length - 1);\n  \n  for (let i = 1; i < segments.length; i++) {\n    try {\n      // Get the part before the class (contains href)\n      const before = segments[i - 1];\n      // Get the part after the class (contains title and metadata)\n      const after = segments[i];\n      \n      // Extract href from before (last href=\"...\")\n      const hrefMatch = before.match(/href=\"([^\"]+)\"[^>]*$/);\n      if (!hrefMatch) continue;\n      \n      // Extract title from after (first >...</a>)\n      const titleMatch = after.match(/^[^>]*>([^<]+)<\\/a>/);\n      if (!titleMatch) continue;\n      \n      const url = hrefMatch[1];\n      const title = titleMatch[1];\n      \n      // Extract authors and source - next div with color:#006621\n      let authors = '';\n      let source = '';\n      const authorsMatch = after.match(/<div[^>]*color:#006621[^>]*>([^<]+)<\\/div>/);\n      if (authorsMatch) {\n        const authorSource = authorsMatch[1].trim();\n        // Format: \"Authors - Source, Year\" or \"Authors - Source\"\n        const parts = authorSource.split(' - ');\n        if (parts.length >= 1) {\n          authors = parts[0].trim();\n        }\n        if (parts.length >= 2) {\n          source = parts[1].trim();\n        }\n      }\n      \n      // Extract summary - next div with class=\"gse_alrt_sni\"\n      let summary = '';\n      const summaryMatch = after.match(/<div[^>]*class=\"gse_alrt_sni\"[^>]*>([^<]+)/);\n      if (summaryMatch) {\n        summary = summaryMatch[1].trim().replace(/\\s+/g, ' ');\n      }\n      \n      console.log(`  ${i}. ${title.substring(0, 40)}...`);\n      \n      // Clean URL (extract real URL from scholar redirect)\n      let cleanUrl = url;\n      if (url.includes('scholar.google')) {\n        const urlParam = url.match(/url=([^&]+)/);\n        if (urlParam) {\n          cleanUrl = decodeURIComponent(urlParam[1]);\n        }\n      }\n      \n      articles.push({\n        title: title.trim(),\n        url: cleanUrl.trim(),\n        authors: authors,\n        source: source,\n        summary: summary,\n        emailDate: emailDate.toISOString(),\n        addedDate: new Date().toISOString()\n      });\n    } catch (err) {\n      console.log(`  Error parsing article ${i}:`, err.message);\n    }\n  }\n  \n  console.log(`✓ Email ${idx + 1}: extracted ${segments.length - 1} articles`);\n}\n\nconsole.log(`\\n===== TOTAL: ${articles.length} articles =====`);\n\nreturn articles.map(article => ({ json: article }));"
+      },
+      "id": "a2ba9850-b849-4a60-b0da-c83ad238d155",
+      "name": "Extract Articles",
+      "position": [
+        -32,
+        320
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "d0d18299-7d0e-44de-b941-1f68b7f656d4",
+      "name": "Attach Sheet+URLs",
+      "position": [
+        192,
+        176
+      ],
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nif (!items.length) return [];\n\nconst firstItem = items[0].json;\nconst existingUrls = firstItem.existingUrls || [];\nconst spreadsheetId = firstItem.spreadsheetId;\nconst sheetName = firstItem.sheetName;\n\nconst existing = new Set(existingUrls.filter(u => u && typeof u === 'string').map(u => u.toLowerCase()));\nconst output = [];\n\nfor (const item of items) {\n  const url = (item.json.url || item.json.URL || '').toString().trim();\n  if (!url) continue;\n  if (existing.has(url.toLowerCase())) continue;\n  \n  // Include all fields including metadata\n  output.push({ \n    json: {\n      url: item.json.url,\n      title: item.json.title,\n      authors: item.json.authors,\n      source: item.json.source,\n      summary: item.json.summary,\n      emailDate: item.json.emailDate,\n      addedDate: item.json.addedDate,\n      spreadsheetId: spreadsheetId,\n      sheetName: sheetName\n    }\n  });\n}\n\nreturn output;\n"
+      },
+      "id": "464d7637-fe69-4120-a181-4a70f057fd3d",
+      "name": "Filter New Articles",
+      "position": [
+        416,
+        176
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{$json.spreadsheetId}}/values/{{encodeURIComponent($json.sheetName)}}!A1:G{{ $json.rows.length + 1 }}?valueInputOption=RAW",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ values: [[\"url\", \"title\", \"authors\", \"source\", \"summary\", \"emailDate\", \"addedDate\"]].concat($json.rows) }) }}",
+        "options": {}
+      },
+      "id": "59665967-6fb2-479f-810b-9a689bac096e",
+      "name": "Append Rows",
+      "position": [
+        864,
+        176
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EdpruPEUkTUFkXyW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nif (!items.length) return [];\n\nconst spreadsheetId = items[0].json.spreadsheetId;\nconst sheetName = items[0].json.sheetName;\n\n// Build rows array\nconst rows = items.map(item => [\n  item.json.url || '',\n  item.json.title || '',\n  item.json.authors || '',\n  item.json.source || '',\n  item.json.summary || '',\n  item.json.emailDate || '',\n  item.json.addedDate || ''\n]);\n\nreturn [{\n  json: {\n    spreadsheetId,\n    sheetName,\n    rows\n  }\n}];"
+      },
+      "id": "batch-prepare-node",
+      "name": "Batch Prepare",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        96
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Attach Sheet+URLs": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Filter New Articles",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Create Spreadsheet": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Move Spreadsheet",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Extract Articles": {
+      "main": [
+        [
+          {
+            "index": 1,
+            "node": "Attach Sheet+URLs",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Filter New Articles": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Append Rows",
+            "type": "main"
+          },
+          {
+            "node": "Batch Prepare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Sheet": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Gate",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Gate": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Resolve Sheet",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Gmail Get Many": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Extract Articles",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Move Spreadsheet": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Set Sheet (Created)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Needs Create?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Create Spreadsheet",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Set Sheet (Found)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Resolve Sheet": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Needs Create?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Find Sheet",
+            "type": "main"
+          },
+          {
+            "index": 1,
+            "node": "Gate",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Set Sheet (Created)": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Sheet Id Merge",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Set Sheet (Found)": {
+      "main": [
+        [
+          {
+            "index": 1,
+            "node": "Sheet Id Merge",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Sheet Id Merge": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Get Existing URLs",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Gmail Get Many",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Sheet+URLs",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Sheet+URLs": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Attach Sheet+URLs",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Get Existing URLs": {
+      "main": [
+        [
+          {
+            "node": "Sheet+URLs",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Batch Prepare": {
+      "main": [
+        [
+          {
+            "node": "Append Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "64954c64-9576-4bf1-be8c-48a165ddbe34",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d2ac793ba851f6a8692c82bf994ae6b6a84dd6bdffe1861e8a6c8494f43d7c1d"
+  },
+  "id": "_WKpFdP84T-8EkAhyFK3u",
+  "tags": []
+}
