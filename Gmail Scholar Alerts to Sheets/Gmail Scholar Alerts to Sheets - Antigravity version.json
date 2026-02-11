@@ -1,0 +1,577 @@
+{
+  "name": "Gmail Scholar Alerts to Sheets - Antigravity version",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 5
+            }
+          ]
+        }
+      },
+      "id": "a5d80e53-f1f9-4330-921f-46527109ea29",
+      "name": "Schedule Trigger",
+      "position": [
+        -2272,
+        272
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "jsCode": "// Use hardcoded spreadsheet ID\nreturn [{\n  json: {\n    id: '1XvtzTLE-TAizIv9L6kmNKWACoqZiChLPNV4_I6Djj6A',\n    name: 'Aanbevolen Artikelen',\n    mimeType: 'application/vnd.google-apps.spreadsheet'\n  }\n}];"
+      },
+      "id": "25fff717-61fc-4e1d-a13d-184879f8484d",
+      "name": "Find Sheet",
+      "position": [
+        -2048,
+        96
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "id": "5772f31d-b51c-43d6-aead-2f47ae14296e",
+      "name": "Gate",
+      "position": [
+        -1824,
+        144
+      ],
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get data from Find Sheet node\nconst found = $('Find Sheet').all();\nconst first = found[0]?.json;\n\nif (first?.id) {\n  return [{ \n    json: { \n      spreadsheetId: first.id, \n      sheetName: \"Aanbevolen Artikelen\", \n      needsCreate: false \n    } \n  }];\n}\n\nreturn [{ \n  json: { \n    sheetName: \"Aanbevolen Artikelen\", \n    needsCreate: true \n  } \n}];\n"
+      },
+      "id": "a1fb45d7-8f91-48b4-9df0-ceca50833753",
+      "name": "Resolve Sheet",
+      "position": [
+        -1600,
+        144
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "5adca6e6-548b-4dde-b78f-26305532fea9",
+              "leftValue": "={{$json.needsCreate}}",
+              "operator": {
+                "operation": "equals",
+                "type": "boolean"
+              },
+              "rightValue": true
+            }
+          ],
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
+        },
+        "options": {}
+      },
+      "id": "d3ceb06f-6b57-4c6f-af94-4adcc37a3060",
+      "name": "Needs Create?",
+      "position": [
+        -1376,
+        144
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "Aanbevolen Artikelen",
+        "sheetsUi": {
+          "sheetValues": [
+            {
+              "title": "Aanbevolen Artikelen"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "72f20d21-304c-4aee-b21a-18606fb86ab3",
+      "name": "Create Spreadsheet",
+      "position": [
+        -1152,
+        80
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EdpruPEUkTUFkXyW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "mode": "id",
+          "value": "={{$json.spreadsheetId || $json.id}}"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "mode": "id",
+          "value": "1wEdWMvbcaHH89i0o_e_H58Arsi_4jsN4"
+        }
+      },
+      "id": "24378689-a2d6-4617-97ad-6b7ce3df8a8c",
+      "name": "Move Spreadsheet",
+      "position": [
+        -928,
+        80
+      ],
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "JwqAH5KCeSeZ8fzs",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the spreadsheet ID from the moved file\nconst data = $input.first().json;\nconst spreadsheetId = data.spreadsheetId || data.id;\n\nreturn [{\n  json: {\n    spreadsheetId: spreadsheetId,\n    sheetName: \"Aanbevolen Artikelen\"\n  }\n}];\n"
+      },
+      "id": "8661caf1-a6ee-481c-946e-c0705a2efda5",
+      "name": "Set Sheet (Created)",
+      "position": [
+        -704,
+        80
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    spreadsheetId: $input.first().json.spreadsheetId,\n    sheetName: $input.first().json.sheetName\n  }\n}];\n"
+      },
+      "id": "846f8f23-98d5-4dee-8fe8-5c49cf17246f",
+      "name": "Set Sheet (Found)",
+      "position": [
+        -704,
+        272
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {},
+      "id": "9d529a10-0138-4987-9b14-84d885a01a08",
+      "name": "Sheet Id Merge",
+      "position": [
+        -480,
+        144
+      ],
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const spreadsheetId = $input.first().json.spreadsheetId;\nconst sheetName = $input.first().json.sheetName;\n\n// Try to read the sheet\ntry {\n  const response = await this.helpers.httpRequestWithAuthentication.call(\n    this,\n    'googleSheetsOAuth2Api',\n    {\n      method: 'GET',\n      url: `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName)}!A:Z`,\n      json: true\n    }\n  );\n  \n  const rows = response.values || [];\n  const urls = rows.slice(1) // Skip header row\n    .map(row => row[0]) // Assume URL is first column\n    .filter(Boolean)\n    .filter(u => typeof u === 'string')\n    .map(u => u.trim())\n    .filter(u => u && u.toLowerCase() !== 'url');\n  \n  return [{ json: { existingUrls: urls } }];\n} catch (error) {\n  // Sheet is empty or doesn't exist yet\n  console.log('No existing data:', error.message);\n  return [{ json: { existingUrls: [] } }];\n}\n"
+      },
+      "id": "89be454f-32eb-425d-a6ef-540af107e540",
+      "name": "Get Existing URLs",
+      "position": [
+        -256,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "7caf02a7-9eb2-4ac6-ab8f-bd1abb6dd09a",
+      "name": "Sheet+URLs",
+      "position": [
+        -32,
+        80
+      ],
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": true,
+        "simple": false,
+        "filters": {
+          "q": "subject:Aanbevolen",
+          "receivedAfter": "={{$now.minus({ days: 7 }).toISO()}}"
+        },
+        "options": {}
+      },
+      "id": "60a74916-8401-4bba-a6dd-ff6f3aab6732",
+      "name": "Gmail Get Many",
+      "position": [
+        -256,
+        320
+      ],
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "webhookId": "6a1fc6dc-f954-44ea-9d4a-df13fdb682fe",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "jlSsYiAdxoDxj4Eu",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Helper: decode HTML entities\nfunction decodeEntities(text) {\n  if (!text) return '';\n  return text\n    .replace(/&#(\\d+);/g, (_, n) => String.fromCharCode(Number(n)))\n    .replace(/&#x([0-9a-fA-F]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)))\n    .replace(/&amp;/g, '&')\n    .replace(/&lt;/g, '<')\n    .replace(/&gt;/g, '>')\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/&nbsp;/g, ' ');\n}\n\nconst articles = [];\nconst inputItems = $input.all();\n\nfor (let idx = 0; idx < inputItems.length; idx++) {\n  const item = inputItems[idx];\n  const html = item.json.html || '';\n  const emailDate = item.json.date ? new Date(item.json.date) : new Date();\n\n  if (!html) continue;\n\n  // Split by the unique class to find articles\n  const segments = html.split('class=\"gse_alrt_title\"');\n\n  for (let i = 1; i < segments.length; i++) {\n    try {\n      const before = segments[i - 1];\n      const after = segments[i];\n\n      // Extract href\n      const hrefMatch = before.match(/href=\"([^\"]+)\"[^>]*$/);\n      if (!hrefMatch) continue;\n\n      // Extract title\n      const titleMatch = after.match(/^[^>]*>([^<]+)<\\/a>/);\n      if (!titleMatch) continue;\n\n      const url = hrefMatch[1];\n      const title = decodeEntities(titleMatch[1].trim());\n\n      // FIX #1: Skip non-article links\n      if (title.toLowerCase().includes('aanbevelingen bekijken') ||\n          title.toLowerCase().includes('view all recommendations') ||\n          url.includes('/scholar_alerts') ||\n          url.includes('scholar_url') === false && !url.includes('url=')) {\n        continue;\n      }\n\n      // FIX #2: Extract authors and source with flexible dash splitting\n      let authors = '';\n      let source = '';\n      let year = '';\n\n      // Try multiple regex patterns for the author/source div\n      const authorsMatch = after.match(/<div[^>]*(?:color:\\s*#006621|class=\"[^\"]*gse_alrt_sni_ausr[^\"]*\")[^>]*>(.*?)<\\/div>/s)\n                        || after.match(/<div[^>]*color:\\s*#006621[^>]*>([^<]+)<\\/div>/);\n      if (authorsMatch) {\n        // Remove any HTML tags inside the match\n        const rawText = authorsMatch[1].replace(/<[^>]+>/g, '').trim();\n        const authorSource = decodeEntities(rawText);\n\n        // Split on various dash types: hyphen, en-dash, em-dash\n        const parts = authorSource.split(/\\s[-\\u2013\\u2014]\\s/);\n        if (parts.length >= 2) {\n          authors = parts[0].trim();\n          // Everything after the first dash is source info\n          const sourceAndYear = parts.slice(1).join(' - ').trim();\n          // Extract year (4-digit number at the end)\n          const yearMatch = sourceAndYear.match(/,?\\s*(\\d{4})\\s*$/);\n          if (yearMatch) {\n            year = yearMatch[1];\n            source = sourceAndYear.replace(/,?\\s*\\d{4}\\s*$/, '').trim();\n          } else {\n            source = sourceAndYear;\n          }\n        } else {\n          authors = authorSource;\n        }\n      }\n\n      // Extract summary (FIX #3: decode entities)\n      let summary = '';\n      const summaryMatch = after.match(/<div[^>]*class=\"gse_alrt_sni\"[^>]*>([^<]+)/);\n      if (summaryMatch) {\n        summary = decodeEntities(summaryMatch[1].trim().replace(/\\s+/g, ' '));\n      }\n\n      // Clean URL (extract real URL from scholar redirect)\n      let cleanUrl = url;\n      if (url.includes('scholar.google')) {\n        const urlParam = url.match(/url=([^&]+)/);\n        if (urlParam) {\n          cleanUrl = decodeURIComponent(urlParam[1]);\n        }\n      }\n\n      articles.push({\n        title: title,\n        url: cleanUrl.trim(),\n        authors: authors,\n        source: source,\n        year: year,\n        summary: summary,\n        emailDate: emailDate.toISOString(),\n        addedDate: new Date().toISOString()\n      });\n    } catch (err) {\n      console.log(`Error parsing article ${i}:`, err.message);\n    }\n  }\n}\n\nconsole.log(`Extracted ${articles.length} articles`);\nreturn articles.map(article => ({ json: article }));"
+      },
+      "id": "a2ba9850-b849-4a60-b0da-c83ad238d155",
+      "name": "Extract Articles",
+      "position": [
+        -32,
+        320
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "d0d18299-7d0e-44de-b941-1f68b7f656d4",
+      "name": "Attach Sheet+URLs",
+      "position": [
+        192,
+        176
+      ],
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nif (!items.length) return [];\n\nconst firstItem = items[0].json;\nconst existingUrls = firstItem.existingUrls || [];\nconst spreadsheetId = firstItem.spreadsheetId;\nconst sheetName = firstItem.sheetName;\n\nconst existing = new Set(existingUrls.filter(u => u && typeof u === 'string').map(u => u.toLowerCase()));\nconst output = [];\n\nfor (const item of items) {\n  const url = (item.json.url || item.json.URL || '').toString().trim();\n  if (!url) continue;\n  if (existing.has(url.toLowerCase())) continue;\n  \n  output.push({ \n    json: {\n      url: item.json.url,\n      title: item.json.title,\n      authors: item.json.authors,\n      source: item.json.source,\n      year: item.json.year || '',\n      summary: item.json.summary,\n      emailDate: item.json.emailDate,\n      addedDate: item.json.addedDate,\n      spreadsheetId: spreadsheetId,\n      sheetName: sheetName\n    }\n  });\n}\n\nreturn output;\n"
+      },
+      "id": "464d7637-fe69-4120-a181-4a70f057fd3d",
+      "name": "Filter New Articles",
+      "position": [
+        416,
+        176
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nif (!items.length) return [];\n\nconst spreadsheetId = items[0].json.spreadsheetId;\nconst sheetName = items[0].json.sheetName;\n\n// Build rows array (now includes year)\nconst rows = items.map(item => [\n  item.json.url || '',\n  item.json.title || '',\n  item.json.authors || '',\n  item.json.source || '',\n  item.json.year || '',\n  item.json.summary || '',\n  item.json.emailDate || '',\n  item.json.addedDate || ''\n]);\n\nreturn [{\n  json: {\n    spreadsheetId,\n    sheetName,\n    rows\n  }\n}];"
+      },
+      "id": "batch-prepare-node",
+      "name": "Batch Prepare",
+      "position": [
+        640,
+        96
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{$json.spreadsheetId}}/values/{{encodeURIComponent($json.sheetName)}}!A1:H{{ $json.rows.length + 1 }}?valueInputOption=RAW",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ values: [[\"url\", \"title\", \"authors\", \"source\", \"year\", \"summary\", \"emailDate\", \"addedDate\"]].concat($json.rows) }) }}",
+        "options": {}
+      },
+      "id": "59665967-6fb2-479f-810b-9a689bac096e",
+      "name": "Append Rows",
+      "position": [
+        864,
+        176
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EdpruPEUkTUFkXyW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// === SMART TITLE CASING ===\nfunction toSentenceCase(title) {\n  if (!title || title.length === 0) return title;\n  \n  const words = title.split(/\\s+/);\n  const alphaWords = words.filter(w => w.replace(/[^a-zA-Z]/g, '').length > 1);\n  if (alphaWords.length === 0) return title;\n  \n  // Detect ALL CAPS\n  const isAllCaps = alphaWords.every(w => {\n    const clean = w.replace(/[^a-zA-Z]/g, '');\n    return clean === clean.toUpperCase();\n  });\n  \n  // Detect Title Case (most content words start uppercase)\n  const smallWords = new Set(['a','an','the','and','but','or','for','nor','on','at','to','from','by','in','of','with','as','is','are','was','were','its','using','via']);\n  const contentWords = alphaWords.filter(w => !smallWords.has(w.toLowerCase()) && w.replace(/[^a-zA-Z]/g, '').length > 2);\n  const isTitleCase = !isAllCaps && contentWords.length > 2 &&\n    contentWords.filter(w => /^[A-Z]/.test(w)).length / contentWords.length > 0.7;\n  \n  if (!isAllCaps && !isTitleCase) return title; // already sentence case\n  \n  // Acronyms to preserve (all uppercase)\n  const acronyms = new Set(['AI','AIED','ICT','SAMR','TPACK','HINA','HEI','HEIs','STEM','MOOC','MOOCs','LMS','VR','AR','XR','IoT','API','OECD','UNESCO','GIS','NLP','ML','DL','GPT','LLM','LLMs','SEM','UTAUT','TAM','PCK','ER','IT','CALL','EFL','ESL','ELT','SLA','CLIL','EMI','SDG','SDGs','PISA','IRT','SRL','CSCL','TEL','OER','CBL','PBL','SPSS','USA','UK','EU','VLE','CMS','TESOL']);\n  \n  // Proper nouns (capitalize first letter)\n  const properNouns = new Set(['english','spanish','french','german','dutch','chinese','vietnamese','arabic','portuguese','italian','japanese','korean','russian','turkish','indonesian','malay','hindi','moroccan','zambian','nigerian','indian','peruvian','austrian','malaysian','croatian','european','african','asian','american','latin','brazilian','mexican','czech','scandinavian','nordic','jordan','jordanian','vietnamese','vietnam','india','peru','austria','malaysia','morocco','croatia','zambia','nigeria','china','japan','korea','germany','spain','france','brazil','mexico','oman','singapore','moodle','google','edmodo','bloom','vygotsky','piaget','bandura','likert']);\n  \n  // Split by colon to capitalize first word of each segment\n  const colonParts = title.split(':');\n  \n  const result = colonParts.map((part, partIdx) => {\n    const trimmed = part.trim();\n    if (!trimmed) return '';\n    \n    // Split preserving whitespace\n    const tokens = trimmed.split(/(\\s+)/);\n    let wordIndex = 0;\n    \n    const processed = tokens.map(token => {\n      if (/^\\s+$/.test(token)) return token; // whitespace\n      \n      const currentWordIdx = wordIndex++;\n      \n      // Handle parenthetical acronyms like (AIED) or (HEIs)\n      const parenMatch = token.match(/^\\(([a-zA-Z]+)\\)(.*)$/);\n      if (parenMatch) {\n        const inner = parenMatch[1].toUpperCase();\n        if (inner.length >= 2 && inner.length <= 6) {\n          return `(${inner})${parenMatch[2]}`;\n        }\n      }\n      \n      // Split word from trailing punctuation\n      const match = token.match(/^([a-zA-Z][a-zA-Z'-]*)(.*)$/);\n      if (!match) return token; // numbers, symbols\n      \n      let word = match[1];\n      const trailing = match[2];\n      \n      // Handle hyphenated words\n      if (word.includes('-')) {\n        const parts = word.split('-');\n        const processed = parts.map((p, pIdx) => {\n          const upper = p.toUpperCase();\n          if (acronyms.has(upper) && p.length <= 6) return upper;\n          if (properNouns.has(p.toLowerCase())) return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();\n          if (currentWordIdx === 0 && pIdx === 0) return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();\n          return p.toLowerCase();\n        });\n        return processed.join('-') + trailing;\n      }\n      \n      const upperWord = word.toUpperCase();\n      \n      // Check acronym (2-6 uppercase letters)\n      if (acronyms.has(upperWord) && word.length >= 2 && word.length <= 6) {\n        return upperWord + trailing;\n      }\n      \n      // Check proper noun\n      if (properNouns.has(word.toLowerCase())) {\n        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() + trailing;\n      }\n      \n      // First word of segment: capitalize\n      if (currentWordIdx === 0) {\n        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() + trailing;\n      }\n      \n      // Everything else: lowercase\n      return word.toLowerCase() + trailing;\n    });\n    \n    return processed.join('');\n  }).join(': ');\n  \n  return result;\n}\n\n// === ENRICHMENT ===\nconst items = $input.all();\nconst results = [];\n\nfunction normalizeTitle(t) {\n  return (t || '').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/[li]/g, 'i');\n}\nfunction similarity(a, b) {\n  if (!a || !b) return 0;\n  const maxLen = Math.max(a.length, b.length);\n  if (maxLen === 0) return 1;\n  let matches = 0;\n  const compareLen = Math.min(a.length, b.length);\n  for (let i = 0; i < compareLen; i++) { if (a[i] === b[i]) matches++; }\n  return matches / maxLen;\n}\n\nfor (const item of items) {\n  const data = { ...item.json };\n  \n  const hasTruncation = \n    (data.authors && (data.authors.includes('...') || data.authors.includes('\\u2026'))) ||\n    (data.source && (data.source.includes('...') || data.source.includes('\\u2026')));\n  const missingData = !data.source || !data.year;\n  const needsEnrich = (hasTruncation || missingData) && data.title;\n\n  if (needsEnrich) {\n    let bestWork = null;\n    let enrichSource = '';\n    \n    // Strategy 1: OpenAlex title search\n    try {\n      const searchTitle = encodeURIComponent(data.title.substring(0, 200));\n      const response = await this.helpers.httpRequest({ method: 'GET', url: `https://api.openalex.org/works?search=${searchTitle}&per_page=5&mailto=n8n-workflow@example.com`, json: true, timeout: 8000 });\n      if (response.results && response.results.length > 0) {\n        const ourTitle = normalizeTitle(data.title);\n        for (const work of response.results) {\n          if (similarity(ourTitle, normalizeTitle(work.title)) > 0.85) {\n            bestWork = { authors: (work.authorships||[]).map(a => a.author?.display_name).filter(Boolean), source: work.primary_location?.source?.display_name || work.host_venue?.display_name || '', year: work.publication_year ? String(work.publication_year) : '' };\n            enrichSource = 'openalex';\n            break;\n          }\n        }\n      }\n    } catch (err) { console.log(`OpenAlex failed: ${err.message}`); }\n    \n    // Strategy 2: Crossref title search\n    if (!bestWork) {\n      try {\n        const searchTitle = encodeURIComponent(data.title.substring(0, 200));\n        const response = await this.helpers.httpRequest({ method: 'GET', url: `https://api.crossref.org/works?query.title=${searchTitle}&rows=3&mailto=n8n-workflow@example.com`, json: true, timeout: 10000 });\n        if (response.message && response.message.items) {\n          const ourTitle = normalizeTitle(data.title);\n          for (const work of response.message.items) {\n            if (similarity(ourTitle, normalizeTitle((work.title||[''])[0])) > 0.85) {\n              bestWork = { authors: (work.author||[]).map(a => [a.given,a.family].filter(Boolean).join(' ')).filter(Boolean), source: (work['container-title']||[''])[0]||'', year: work.published?.['date-parts']?.[0]?.[0] ? String(work.published['date-parts'][0][0]) : '' };\n              enrichSource = 'crossref';\n              break;\n            }\n          }\n        }\n      } catch (err) { console.log(`Crossref failed: ${err.message}`); }\n      await new Promise(r => setTimeout(r, 200));\n    }\n    \n    // Strategy 3: DOI from URL\n    if (!bestWork && data.url) {\n      const doiMatch = data.url.match(/\\/(10\\.[^/]+\\/[^\\s?&#]+)/);\n      if (doiMatch) {\n        try { const r = await this.helpers.httpRequest({ method:'GET', url:`https://api.openalex.org/works/doi:${doiMatch[1]}?mailto=n8n-workflow@example.com`, json:true, timeout:8000 }); if(r?.title) { bestWork = { authors:(r.authorships||[]).map(a=>a.author?.display_name).filter(Boolean), source:r.primary_location?.source?.display_name||'', year:r.publication_year?String(r.publication_year):'' }; enrichSource='openalex-doi'; } } catch(e){}\n        if (!bestWork) { try { const r = await this.helpers.httpRequest({ method:'GET', url:`https://api.crossref.org/works/${doiMatch[1]}`, json:true, timeout:8000 }); if(r.message?.title) { const w=r.message; bestWork = { authors:(w.author||[]).map(a=>[a.given,a.family].filter(Boolean).join(' ')).filter(Boolean), source:(w['container-title']||[''])[0]||'', year:w.published?.['date-parts']?.[0]?.[0]?String(w.published['date-parts'][0][0]):'' }; enrichSource='crossref-doi'; } } catch(e){} }\n      }\n    }\n    \n    // Strategy 4: Frontiers year from URL\n    if (!bestWork && data.url && data.url.includes('frontiersin.org')) {\n      const yearMatch = data.url.match(/feduc\\.(\\d{4})/);\n      if (yearMatch && !data.year) data.year = yearMatch[1];\n    }\n    \n    if (bestWork) {\n      console.log(`Enriched \"${data.title.substring(0, 50)}...\" via ${enrichSource}`);\n      if (bestWork.authors?.length > 0 && (hasTruncation || bestWork.authors.length > (data.authors||'').split(',').length)) data.authors = bestWork.authors.join(', ');\n      if (!data.source && bestWork.source) data.source = bestWork.source;\n      if (data.source && (data.source.includes('...')||data.source.includes('\\u2026')) && bestWork.source) data.source = bestWork.source;\n      if (!data.year && bestWork.year) data.year = bestWork.year;\n    }\n    await new Promise(r => setTimeout(r, 200));\n  }\n  \n  // Apply smart title casing\n  if (data.title) {\n    data.title = toSentenceCase(data.title);\n  }\n  \n  results.push({ json: data });\n}\n\nconsole.log(`Processed ${results.length} articles`);\nreturn results;"
+      },
+      "id": "30741b74-d880-4ce3-a629-e3bc0dd144da",
+      "name": "Enrich Metadata",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        320
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Attach Sheet+URLs": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Filter New Articles",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Batch Prepare": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Append Rows",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Create Spreadsheet": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Move Spreadsheet",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Filter New Articles": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Batch Prepare",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Find Sheet": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Gate",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Gate": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Resolve Sheet",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Get Existing URLs": {
+      "main": [
+        [
+          {
+            "index": 1,
+            "node": "Sheet+URLs",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Gmail Get Many": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Extract Articles",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Move Spreadsheet": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Set Sheet (Created)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Needs Create?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Create Spreadsheet",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Set Sheet (Found)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Resolve Sheet": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Needs Create?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Find Sheet",
+            "type": "main"
+          },
+          {
+            "index": 1,
+            "node": "Gate",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Set Sheet (Created)": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Sheet Id Merge",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Set Sheet (Found)": {
+      "main": [
+        [
+          {
+            "index": 1,
+            "node": "Sheet Id Merge",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Sheet Id Merge": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Get Existing URLs",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Gmail Get Many",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Sheet+URLs",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Sheet+URLs": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Attach Sheet+URLs",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Extract Articles": {
+      "main": [
+        [
+          {
+            "node": "Enrich Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich Metadata": {
+      "main": [
+        [
+          {
+            "node": "Attach Sheet+URLs",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "b5df85a8-784c-44ee-ae52-f602320c5dc5",
+  "meta": {
+    "instanceId": "d2ac793ba851f6a8692c82bf994ae6b6a84dd6bdffe1861e8a6c8494f43d7c1d"
+  },
+  "id": "rhNfTocPvl0ZBrDw",
+  "tags": []
+}
