@@ -1,0 +1,25 @@
+# Task: Energy Update Marktstraat 61 Workflow
+
+- [x] Gather API Response Structure <!-- id: 0 -->
+    - [x] Request JSON output examples for `/api/v1/powergas/day` <!-- id: 1 -->
+    - [x] Request JSON output examples for `/api/v1/weather/day` <!-- id: 2 -->
+    - [x] Request JSON output examples for `/api/v1/powergas/month` <!-- id: 3 -->
+- [x] Create Implementation Plan <!-- id: 4 -->
+- [x] Develop Workflow <!-- id: 5 -->
+    - [x] Configure Triggers (Schedule & Manual) <!-- id: 6 -->
+    - [x] Implement "Graaddagen" Branch <!-- id: 7 -->
+        - [x] Update HTTP Nodes (query params) <!-- id: 17 -->
+        - [x] Update Code Nodes (JSON object mapping) <!-- id: 18 -->
+        - [x] Revert to Array Indices & Update Start Date <!-- id: 21 -->
+        - [x] Fix HTTP Loop (Execute Once) & Aggregation <!-- id: 23 -->
+        - [x] Fix Rate Limit (Batching) <!-- id: 24 -->
+        - [x] Fix Date Format (Leading Zeros) <!-- id: 26 -->
+        - [x] Google Sheets Update Logic <!-- id: 11 -->
+        - [x] Optimize Sheets (Append & Delays) <!-- id: 27 -->
+        - [x] Fix Node Operation (Read -> Write) <!-- id: 29 -->
+    - [x] Implement "Verbruik per maand" Branch <!-- id: 12 -->
+        - [x] Update HTTP Node (query params) <!-- id: 19 -->
+        - [x] Update Code Node (JSON object mapping) <!-- id: 20 -->
+        - [x] Revert to Array Indices & Update Start Date <!-- id: 22 -->
+        - [x] Google Sheets Update Logic <!-- id: 15 -->
+- [x] Review and Delivery <!-- id: 16 -->

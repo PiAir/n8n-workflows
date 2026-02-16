@@ -1,0 +1,440 @@
+{
+  "name": "Energie Update",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "position": [
+        112,
+        304
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "position": [
+        112,
+        112
+      ],
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "url": "http://192.168.0.11/api/v1/weather/day?sort=asc&starttime=2024-01-01%2000:00:00",
+        "options": {}
+      },
+      "id": "http-weather-day",
+      "name": "HTTP Weather Day",
+      "position": [
+        304,
+        208
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "url": "http://192.168.0.11/api/v1/powergas/day?sort=asc&starttime=2024-01-01%2000:00:00",
+        "options": {}
+      },
+      "executeOnce": true,
+      "id": "http-powergas-day",
+      "name": "HTTP PowerGas Day",
+      "position": [
+        512,
+        208
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const weatherItems = $items(\"HTTP Weather Day\"); \nconst energyItems = $input.all(); \n\nconst weatherMap = {};\n// weatherItems is an array of objects like { json: [date, val, ...] }\nweatherItems.forEach(item => {\n    const row = item.json;\n    weatherMap[row[0]] = row[row.length-1]; \n});\n\nconst results = [];\n\nenergyItems.forEach(item => {\n   const row = item.json;\n   const dateStr = row[0];\n   if (!dateStr) return;\n\n   const gas = row[9];\n   const graaddag = weatherMap[dateStr];\n\n   if (graaddag !== undefined) {\n       const d = new Date(dateStr);\n       const day = String(d.getDate()).padStart(2, '0');\n       const month = String(d.getMonth() + 1).padStart(2, '0');\n       // Format: DD-MM-YYYY\n       const fmtDate = `${day}-${month}-${d.getFullYear()}`;\n\n       const res = {\n           \"Dag\": fmtDate,\n           \"Graaddag\": parseFloat(graaddag.toFixed(3)),\n           \"m3\": parseFloat(gas.toFixed(3)),\n           \"m3 / GD\": graaddag > 0 ? parseFloat((gas / graaddag).toFixed(2)) : 0,\n           \"max m3\": Math.round(graaddag * 0.65)\n       };\n       results.push({json: res});\n   }\n});\n\n// LIMIT TO 50 ITEMS FOR TESTING (Avoiding loops/rate limits)\n// return results.slice(0, 50);\nreturn results;"
+      },
+      "id": "code-graaddagen",
+      "name": "Code Graaddagen",
+      "position": [
+        704,
+        208
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "vik2UkqdhsvJFjkQ"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Graaddagen"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Dag": "={{ $json.Dag }}",
+            "Graaddag": "={{ $json.Graaddag }}",
+            "m3": "={{ $json.m3 }}",
+            "m³ / GD": "={{ $json[\"m3 / GD\"] }}",
+            "max m3": "={{ $json[\"max m3\"] }}"
+          },
+          "matchingColumns": [
+            "Dag"
+          ],
+          "schema": [
+            {
+              "id": "Dag",
+              "displayName": "Dag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Graaddag",
+              "displayName": "Graaddag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "m3",
+              "displayName": "m3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "m³ / GD",
+              "displayName": "m³ / GD",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "max m3",
+              "displayName": "max m3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "opmerking",
+              "displayName": "opmerking",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Legenda",
+              "displayName": "Legenda",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "google-sheets-graaddagen",
+      "name": "Google Sheets Graaddagen",
+      "position": [
+        912,
+        208
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PEUkTUFkXyW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "http://192.168.0.11/api/v1/powergas/month?sort=asc&starttime=2024-01-01%2000:00:00",
+        "options": {}
+      },
+      "id": "http-powergas-month",
+      "name": "HTTP PowerGas Month",
+      "position": [
+        304,
+        512
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all(); \n\nconst months = [\"Januari\", \"Februari\", \"Maart\", \"April\", \"Mei\", \"Juni\", \"Juli\", \"Augustus\", \"September\", \"Oktober\", \"November\", \"December\"];\n\nconst results = [];\n\ninputItems.forEach(item => {\n    const row = item.json;\n    const dateStr = row[0];\n    if (!dateStr) return;\n    \n    const d = new Date(dateStr);\n\n    const gas = Math.round(row[9]);\n    const stroom = Math.round(row[6]);\n    const terug = Math.round(row[7]); \n    const totaal = stroom - terug;\n\n    results.push({\n        json: {\n            \"Maand\": months[d.getMonth()],\n            \"Jaar\": d.getFullYear(), // number ok for append/user_entered\n            \"Gas\": gas,\n            \"Stroom\": stroom,\n            \"Teruglevering\": terug,\n            \"Totaal\": totaal,\n            // \"Water\" ignored\n        }\n    });\n});\nreturn results;"
+      },
+      "id": "code-maand",
+      "name": "Code Maand",
+      "position": [
+        512,
+        512
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "vik2UkqdhsvJFjkQ"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Verbruik per maand"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Maand": "={{ $json.Maand }}",
+            "Jaar": "={{ $json.Jaar }}",
+            "Gas": "={{ $json.Gas }}",
+            "Stroom": "={{ $json.Stroom }}",
+            "Teruglevering": "={{ $json.Teruglevering }}",
+            "Totaal": "={{ $json.Totaal }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Maand",
+              "displayName": "Maand",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Jaar",
+              "displayName": "Jaar",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Gas",
+              "displayName": "Gas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Stroom",
+              "displayName": "Stroom",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Teruglevering",
+              "displayName": "Teruglevering",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Totaal",
+              "displayName": "Totaal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Water",
+              "displayName": "Water",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "google-sheets-maand",
+      "name": "Google Sheets Maand",
+      "position": [
+        704,
+        512
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "TUFkXyW",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Code Graaddagen": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Google Sheets Graaddagen",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Code Maand": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Google Sheets Maand",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "HTTP PowerGas Day": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Code Graaddagen",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "HTTP PowerGas Month": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Code Maand",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "HTTP Weather Day": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "HTTP PowerGas Day",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "HTTP Weather Day",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "HTTP PowerGas Month",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "HTTP Weather Day",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "HTTP PowerGas Month",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "5b0b615d-3acc-40f4-a558-402be49d5f00",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d2ac793ba851f6a8692c82bf994ae6b6a84dd6bdffe1861e8a6c8494f43d7c1d"
+  },
+  "id": "esrZpuqTtkI7yxDx",
+  "tags": []
+}
