@@ -1,4 +1,4 @@
-# Workflow Walkthrough: Energie Update Marktstraat 61
+# Workflow Walkthrough: Energie Update
 
 ## Workflow Configuration
 - **Status**: Operational.

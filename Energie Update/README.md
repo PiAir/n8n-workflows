@@ -1,4 +1,4 @@
-# Energie Update - Marktstraat 61
+# Energie Update
 
 n8n workflow voor automatische synchronisatie van P1 meter data naar Google Sheets voor energiemonitoring.
 

@@ -1,4 +1,4 @@
-# Task: Energy Update Marktstraat 61 Workflow
+# Task: Energy Update Workflow
 
 - [x] Gather API Response Structure <!-- id: 0 -->
     - [x] Request JSON output examples for `/api/v1/powergas/day` <!-- id: 1 -->

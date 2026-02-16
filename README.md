@@ -1,10 +1,8 @@
-"# n8n Workflows
-
 Deze repository bevat een verzameling n8n workflows voor verschillende automatiseringstaken.
 
 ## 📋 Overzicht Workflows
 
-### 1. Energie Update (Marktstraat 61)
+### 1. Energie Update
 **Locatie**: `Energie Update/`
 
 Een workflow die dagelijks P1 meter data synchroniseert naar Google Sheets voor energiemonitoring.

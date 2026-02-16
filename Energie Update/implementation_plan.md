@@ -1,4 +1,4 @@
-# Implementation Plan - Energie Update Marktstraat 61
+# Implementation Plan - Energie Update
 
 ## Goal
 Create an n8n workflow that synchronizes local P1 meter data to a Google Sheet daily at 01:00 AM.
