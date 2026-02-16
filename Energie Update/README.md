@@ -110,7 +110,7 @@ De workflow is momenteel ingesteld om **50 items** te verwerken om rate limiting
 - **[task.md](task.md)**: Complete implementatie checklist (alle taken afgerond)
 - **[implementation_plan.md](implementation_plan.md)**: Technisch ontwerp en data mapping
 - **[walkthrough.md](walkthrough.md)**: Setup instructies en configuratie
-- **[n8n-Google-Sheets/SKILL.md](n8n-Google-Sheets/SKILL.md)**: Expert guide voor n8n Google Sheets integratie
+- **[n8n-Google-Sheets/SKILL.md](n8n-Google-Sheets/SKILL.md)**: Expert guide voor n8n Google Sheets integratie - door Antigravity gemaakt naar aanleiding van de ontwikkelsessie. Deze SKILL zou moeten helpen bij het maken van n8n workflows die Google Sheets bewerken, inclusief best practices voor rate limiting, data synchronisatie en troubleshooting.
 
 ### Data Mapping Referentie
 
